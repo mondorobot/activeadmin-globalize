@@ -10,7 +10,7 @@ module ActiveAdmin
 
         auto_sort = options.fetch(:auto_sort, true)
 
-        template.content_tag(:div, class: "activeadmin-translations") do
+        html = template.content_tag(:div, class: "activeadmin-translations") do
 
           template.content_tag(:ul, class: "available-locales") do
 
@@ -29,15 +29,14 @@ module ActiveAdmin
             translation ||= object.translations.build(locale: locale)
 
             fields = proc do |form|
-              form.input(:locale, as: :hidden)
-              form.input(:id, as: :hidden)
               I18n.with_locale(switch_locale ? locale : I18n.locale) do
                 id_field = form.input :id, :as => :hidden
                 locale_field = form.input :locale, :as => :hidden
-                translated_fields = form.options[:parent_builder].object.class.translated_attribute_names
-                translated_fields = form.inputs(*translated_fields)
 
-                id_field + locale_field + translated_fields
+                [:id, :locale].tap do |fields_for_translation_form|
+                  translated_fields = form.options[:parent_builder].object.class.translated_attribute_names
+                  fields_for_translation_form << form.inputs(*translated_fields)
+                end
               end
             end
 
@@ -46,8 +45,13 @@ module ActiveAdmin
               class: "inputs locale locale-#{translation.locale}",
               &fields
             )
-
           end.join.html_safe
+        end
+
+        if template.output_buffer
+          return template.concat html
+        else
+          return html
         end
       end
 
