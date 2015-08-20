@@ -1,8 +1,10 @@
-$ ->
+class ActiveAdminGlobalize
 
-  translations = ->
+  translations: (container=document) ->
 
-    $(".activeadmin-translations > ul").each ->
+    $container = $(container)
+
+    $(".activeadmin-translations > ul", $container).each ->
       $dom = $(this)
       if !$dom.data("ready")
         $dom.data("ready", true)
@@ -25,12 +27,16 @@ $ ->
           containsErrors = $content.find(".input.error").length > 0
           $tab.toggleClass("error", containsErrors)
 
+
+$ ->
+  globalizer = new ActiveAdminGlobalize
+  globalizer.translations()
+
+  $(document).on 'translations:refresh', =>
+    globalizer.translations()
+
   # this is to handle elements created with has_many
-  $("a").bind "click", ->
-    setTimeout(
-      -> translations()
-      50
-    )
-
-  translations()
-
+  $(document).on 'has_many_add:after', (event, fieldset, parent) ->
+    setTimeout =>
+      globalizer.translations(fieldset)
+    , 50
